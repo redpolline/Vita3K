@@ -106,14 +106,16 @@ bool init(EmuEnvState &state, Config &cfg, const Root &root_paths) {
 
     state.base_path = root_paths.get_base_path_string();
     state.default_path = root_paths.get_pref_path_string();
+    state.cache_path = string_utils::utf_to_wide(root_paths.get_cache_path_string());
+    state.shared_path = root_paths.get_shared_path_string();
 
     // If configuration does not provide a preference path, use SDL's default
     if (state.cfg.pref_path == root_paths.get_pref_path() || state.cfg.pref_path.empty())
-        state.pref_path = string_utils::utf_to_wide(root_paths.get_pref_path_string());
+        state.set_pref_path(string_utils::utf_to_wide(root_paths.get_pref_path_string()));
     else {
         if (state.cfg.pref_path.back() != '/')
             state.cfg.pref_path += '/';
-        state.pref_path = string_utils::utf_to_wide(state.cfg.pref_path);
+        state.set_pref_path(string_utils::utf_to_wide(state.cfg.pref_path));
     }
 
     state.backend_renderer = renderer::Backend::Vulkan;
@@ -179,7 +181,7 @@ bool init(EmuEnvState &state, Config &cfg, const Root &root_paths) {
 
     // initialize the renderer first because we need to know if we need a page table
     if (!state.cfg.console) {
-        if (renderer::init(state.window.get(), state.renderer, state.backend_renderer, state.cfg, state.base_path.data())) {
+        if (renderer::init(state.window.get(), state.renderer, state.backend_renderer, state.cfg, root_paths)) {
             update_viewport(state);
         } else {
             switch (state.backend_renderer) {
@@ -199,7 +201,7 @@ bool init(EmuEnvState &state, Config &cfg, const Root &root_paths) {
         }
     }
 
-    if (!init(state.io, state.base_path, state.pref_path, state.cfg.console)) {
+    if (!init(state.io, state.cache_path, state.get_wide_pref_path(), state.cfg.console)) {
         LOG_ERROR("Failed to initialize file system for the emulator!");
         return false;
     }

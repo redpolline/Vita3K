@@ -242,9 +242,9 @@ EXPORT(int32_t, sceAvPlayerAddSource, SceUID player_handle, Ptr<const char> path
 
     const auto thread = lock_and_find(thread_id, emuenv.kernel.threads, emuenv.kernel.mutex);
 
-    auto file_path = expand_path(emuenv.io, path.get(emuenv.mem), emuenv.pref_path);
+    auto file_path = expand_path(emuenv.io, path.get(emuenv.mem), emuenv.get_wide_pref_path());
     if (!fs::exists(file_path) && player_info->file_manager.open_file && player_info->file_manager.close_file && player_info->file_manager.read_file && player_info->file_manager.file_size) {
-        const auto cache_path{ fs::path(emuenv.base_path) / "cache" };
+        const auto cache_path{ fs::path(emuenv.cache_path) / "cache" };
         if (!fs::exists(cache_path))
             fs::create_directories(cache_path);
 

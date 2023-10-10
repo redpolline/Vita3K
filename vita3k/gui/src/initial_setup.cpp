@@ -95,9 +95,9 @@ void draw_initial_setup(GuiState &gui, EmuEnvState &emuenv) {
     const auto completed_setup = lang["completed_setup"].c_str();
 
     const auto is_default_path = emuenv.cfg.pref_path == emuenv.default_path;
-    const auto FW_PATH{ fs::path(emuenv.pref_path) / "vs0" };
+    const auto FW_PATH{ fs::path(emuenv.get_wide_pref_path()) / "vs0" };
     const auto FW_INSTALLED = fs::exists(FW_PATH) && !fs::is_empty(FW_PATH);
-    const auto FW_FONT_PATH{ fs::path(emuenv.pref_path) / "sa0" };
+    const auto FW_FONT_PATH{ fs::path(emuenv.get_wide_pref_path()) / "sa0" };
     const auto FW_FONT_INSTALLED = fs::exists(FW_FONT_PATH) && !fs::is_empty(FW_FONT_PATH);
 
     ImGui::PushFont(gui.vita_font);
@@ -168,16 +168,16 @@ void draw_initial_setup(GuiState &gui, EmuEnvState &emuenv) {
             std::filesystem::path emulator_path = "";
             host::dialog::filesystem::Result result = host::dialog::filesystem::pick_folder(emulator_path);
 
-            if ((result == host::dialog::filesystem::Result::SUCCESS) && (emulator_path.wstring() != emuenv.pref_path)) {
-                emuenv.pref_path = emulator_path.wstring() + L'/';
+            if ((result == host::dialog::filesystem::Result::SUCCESS) && (emulator_path.wstring() != emuenv.get_wide_pref_path())) {
+                emuenv.set_pref_path(emulator_path.wstring() + L'/');
                 emuenv.cfg.pref_path = emulator_path.string();
             }
         }
         if (!is_default_path) {
             ImGui::SameLine(0, 40.f * SCALE.x);
             if (ImGui::Button("Reset Emulator Path", BIG_BUTTON_SIZE)) {
-                if (string_utils::utf_to_wide(emuenv.default_path) != emuenv.pref_path) {
-                    emuenv.pref_path = string_utils::utf_to_wide(emuenv.default_path);
+                if (string_utils::utf_to_wide(emuenv.default_path) != emuenv.get_wide_pref_path()) {
+                    emuenv.set_pref_path(string_utils::utf_to_wide(emuenv.default_path));
                     emuenv.cfg.pref_path = emuenv.default_path;
                 }
             }

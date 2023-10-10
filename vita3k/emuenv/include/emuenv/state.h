@@ -102,6 +102,10 @@ private:
     std::unique_ptr<GDBState> _gdb;
     std::unique_ptr<HTTPState> _http;
 
+    // ImGui needs a const char * for it's config ini path.
+    std::wstring wpref_path{};
+    std::string imgui_ini_path{};
+
 public:
     // App info contained in its `param.sfo` file
     sfo::SfoAppInfo &app_info;
@@ -112,7 +116,8 @@ public:
     std::string current_app_title{};
     std::string base_path{};
     std::string default_path{};
-    std::wstring pref_path{};
+    std::wstring cache_path{};
+    std::string shared_path{};
     bool load_exec{};
     std::string load_app_path{};
     std::string load_exec_argv{};
@@ -165,6 +170,12 @@ public:
     EmuEnvState();
     // declaring a destructor is necessary to forward declare unique_ptrs
     ~EmuEnvState();
+
+    std::wstring get_wide_pref_path() {
+        return this->wpref_path;
+    }
+    std::string get_pref_path();
+    void set_pref_path(std::wstring path);
 
     // disable copy
     EmuEnvState(const EmuEnvState &) = delete;

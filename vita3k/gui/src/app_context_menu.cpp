@@ -39,7 +39,7 @@ static std::map<double, std::string> update_history_infos;
 
 static bool get_update_history(GuiState &gui, EmuEnvState &emuenv, const std::string &app_path) {
     update_history_infos.clear();
-    const auto change_info_path{ fs::path(emuenv.pref_path) / "ux0/app" / app_path / "sce_sys/changeinfo/" };
+    const auto change_info_path{ fs::path(emuenv.get_wide_pref_path()) / "ux0/app" / app_path / "sce_sys/changeinfo/" };
 
     std::string fname = fs::exists(change_info_path / fmt::format("changeinfo_{:0>2d}.xml", emuenv.cfg.sys_lang)) ? fmt::format("changeinfo_{:0>2d}.xml", emuenv.cfg.sys_lang) : "changeinfo.xml";
 
@@ -139,7 +139,7 @@ static std::string get_time_app_used(const int64_t &time_used) {
 
 void get_time_apps(GuiState &gui, EmuEnvState &emuenv) {
     gui.time_apps.clear();
-    const auto time_path{ fs::path(emuenv.pref_path) / "ux0/user/time.xml" };
+    const auto time_path{ fs::path(emuenv.get_wide_pref_path()) / "ux0/user/time.xml" };
 
     pugi::xml_document time_xml;
     if (fs::exists(time_path)) {
@@ -184,7 +184,7 @@ static void save_time_apps(GuiState &gui, EmuEnvState &emuenv) {
         }
     }
 
-    const auto time_path{ fs::path(emuenv.pref_path) / "ux0/user/time.xml" };
+    const auto time_path{ fs::path(emuenv.get_wide_pref_path()) / "ux0/user/time.xml" };
     const auto save_xml = time_xml.save_file(time_path.c_str());
     if (!save_xml)
         LOG_ERROR("Fail save xml");
@@ -215,11 +215,11 @@ void delete_app(GuiState &gui, EmuEnvState &emuenv, const std::string &app_path)
     const auto APP_INDEX = get_app_index(gui, app_path);
     const auto title_id = APP_INDEX->title_id;
     try {
-        const auto PREF_PATH = fs::path(emuenv.pref_path);
+        const auto PREF_PATH = fs::path(emuenv.get_wide_pref_path());
         fs::remove_all(PREF_PATH / "ux0/app" / app_path);
 
-        const auto BASE_PATH = fs::path(emuenv.base_path);
-        const auto CUSTOM_CONFIG_PATH{ BASE_PATH / "config" / fmt::format("config_{}.xml", app_path) };
+        const auto CACHE_PATH = fs::path(emuenv.cache_path);
+        const auto CUSTOM_CONFIG_PATH{ PREF_PATH / "config" / fmt::format("config_{}.xml", app_path) };
         if (fs::exists(CUSTOM_CONFIG_PATH))
             fs::remove_all(CUSTOM_CONFIG_PATH);
         const auto ADDCONT_PATH{ PREF_PATH / "ux0/addcont" / APP_INDEX->addcont };
@@ -234,10 +234,10 @@ void delete_app(GuiState &gui, EmuEnvState &emuenv, const std::string &app_path)
         const auto SAVE_DATA_PATH{ PREF_PATH / "ux0/user" / emuenv.io.user_id / "savedata" / APP_INDEX->savedata };
         if (fs::exists(SAVE_DATA_PATH))
             fs::remove_all(SAVE_DATA_PATH);
-        const auto SHADER_CACHE_PATH{ BASE_PATH / "cache/shaders" / title_id };
+        const auto SHADER_CACHE_PATH{ CACHE_PATH / "cache/shaders" / title_id };
         if (fs::exists(SHADER_CACHE_PATH))
             fs::remove_all(SHADER_CACHE_PATH);
-        const auto SHADER_LOG_PATH{ BASE_PATH / "shaderlog" / title_id };
+        const auto SHADER_LOG_PATH{ CACHE_PATH / "shaderlog" / title_id };
         if (fs::exists(SHADER_LOG_PATH))
             fs::remove_all(SHADER_LOG_PATH);
 
@@ -286,14 +286,14 @@ void draw_app_context_menu(GuiState &gui, EmuEnvState &emuenv, const std::string
     const auto APP_INDEX = get_app_index(gui, app_path);
     const auto title_id = APP_INDEX->title_id;
 
-    const auto APP_PATH{ fs::path(emuenv.pref_path) / "ux0/app" / app_path };
-    const auto CUSTOM_CONFIG_PATH{ fs::path(emuenv.base_path) / "config" / fmt::format("config_{}.xml", app_path) };
-    const auto ADDCONT_PATH{ fs::path(emuenv.pref_path) / "ux0/addcont" / APP_INDEX->addcont };
-    const auto LICENSE_PATH{ fs::path(emuenv.pref_path) / "ux0/license" / title_id };
+    const auto APP_PATH{ fs::path(emuenv.get_wide_pref_path()) / "ux0/app" / app_path };
+    const auto CUSTOM_CONFIG_PATH{ fs::path(emuenv.get_wide_pref_path()) / "config" / fmt::format("config_{}.xml", app_path) };
+    const auto ADDCONT_PATH{ fs::path(emuenv.get_wide_pref_path()) / "ux0/addcont" / APP_INDEX->addcont };
+    const auto LICENSE_PATH{ fs::path(emuenv.get_wide_pref_path()) / "ux0/license" / title_id };
     const auto MANUAL_PATH{ APP_PATH / "sce_sys/manual" };
-    const auto SAVE_DATA_PATH{ fs::path(emuenv.pref_path) / "ux0/user" / emuenv.io.user_id / "savedata" / APP_INDEX->savedata };
-    const auto SHADER_CACHE_PATH{ fs::path(emuenv.base_path) / "cache/shaders" / title_id };
-    const auto SHADER_LOG_PATH{ fs::path(emuenv.base_path) / "shaderlog" / title_id };
+    const auto SAVE_DATA_PATH{ fs::path(emuenv.get_wide_pref_path()) / "ux0/user" / emuenv.io.user_id / "savedata" / APP_INDEX->savedata };
+    const auto SHADER_CACHE_PATH{ fs::path(emuenv.cache_path) / "cache/shaders" / title_id };
+    const auto SHADER_LOG_PATH{ fs::path(emuenv.cache_path) / "shaderlog" / title_id };
     const auto ISSUES_URL = "https://github.com/Vita3K/compatibility/issues";
 
     const ImVec2 display_size(emuenv.viewport_size.x, emuenv.viewport_size.y);

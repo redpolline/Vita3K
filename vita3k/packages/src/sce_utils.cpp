@@ -659,8 +659,10 @@ static void traverse_directory(Fat16::Image &img, Fat16::Entry mee, const std::w
 
 void extract_fat(const std::wstring &partition_path, const std::string &partition, const std::wstring &pref_path) {
 #ifdef _WIN32
+    auto path_sep = L"\\";
     FILE *f = _wfopen((partition_path + L"/" + string_utils::utf_to_wide(partition)).c_str(), L"rb");
 #else
+    auto path_sep = L"/";
     FILE *f = fopen((string_utils::wide_to_utf(partition_path) + "/" + partition).c_str(), "rb");
 #endif
     Fat16::Image img(
@@ -677,7 +679,7 @@ void extract_fat(const std::wstring &partition_path, const std::string &partitio
         });
 
     Fat16::Entry first;
-    traverse_directory(img, first, pref_path + string_utils::utf_to_wide(partition.substr(0, 3)));
+    traverse_directory(img, first, pref_path + path_sep + string_utils::utf_to_wide(partition.substr(0, 3)));
 
     fclose(f);
 }

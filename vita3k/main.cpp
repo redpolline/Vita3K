@@ -86,15 +86,63 @@ static void run_execv(char *argv[], EmuEnvState &emuenv) {
 int main(int argc, char *argv[]) {
     ZoneScoped; // Tracy - Track main function scope
     Root root_paths;
-    root_paths.set_base_path(string_utils::utf_to_wide(SDL_GetBasePath()));
-    root_paths.set_pref_path(string_utils::utf_to_wide(SDL_GetPrefPath(org_name, app_name)));
+    auto base_path = SDL_GetBasePath();
+    root_paths.set_base_path(string_utils::utf_to_wide(base_path));
 
-    // Create default preference path for safety
+#if defined(__linux__) && !defined(__ANDROID__) && !defined(__APPLE__)
+    // XDG Data Dirs.
+    auto env_home_dir = getenv("HOME");
+    auto env_data = getenv("XDG_CONFIG_HOME");
+    if (env_data != NULL)
+        root_paths.set_pref_path(string_utils::utf_to_wide(env_data) / fs::path(app_name));
+    else if (env_home_dir != NULL)
+        root_paths.set_pref_path(fs::path(string_utils::utf_to_wide(env_home_dir)) / ".config" / fs::path(app_name));
+
+    env_data = getenv("XDG_CACHE_HOME");
+    if (env_data != NULL)
+        root_paths.set_cache_path(string_utils::utf_to_wide(env_data) / fs::path(app_name));
+    else if (env_home_dir != NULL)
+        root_paths.set_cache_path(fs::path(string_utils::utf_to_wide(env_home_dir)) / ".cache" / fs::path(app_name));
+
+    if (env_home_dir != NULL) {
+        // Don't assume that base_path is portable.
+        root_paths.set_shared_path(fs::path(env_home_dir) / ".local/share" / fs::path(app_name));
+    }
+    env_data = getenv("XDG_DATA_DIRS");
+    if (env_data != NULL) {
+        auto env_paths = string_utils::split_string(env_data, ':');
+        for (std::vector<std::string>::iterator iter = env_paths.begin() ; iter != env_paths.end() ; iter++) {
+            if (fs::exists(*iter / fs::path(app_name))) {
+                root_paths.set_shared_path(string_utils::utf_to_wide(*iter) / fs::path(app_name));
+                break;
+            }
+        }
+    }
+#elif
+    auto pref_path = SDL_GetPrefPath(org_name, app_name); // Call this here to avoid creating useless empty paths on Linux.
+
+    root_paths.set_pref_path(string_utils::utf_to_wide(pref_path));
+    root_paths.set_shared_path(string_utils::utf_to_wide(base_path));
+    root_paths.set_cache_path(string_utils::utf_to_wide(pref_path));
+
+    SDL_free(pref_path);
+#endif
+    SDL_free(base_path);
+
+    // Create default preference and cache path for safety
     if (!fs::exists(root_paths.get_pref_path()))
         fs::create_directories(root_paths.get_pref_path());
 
+    if (!fs::exists(root_paths.get_cache_path()))
+        fs::create_directories(root_paths.get_cache_path());
+
     if (logging::init(root_paths, true) != Success)
         return InitConfigFailed;
+
+    LOG_INFO("Base path: {}", root_paths.get_base_path_string());
+    LOG_INFO("Shared assets path: {}", root_paths.get_shared_path_string());
+    LOG_INFO("User pref path: {}", root_paths.get_pref_path_string());
+    LOG_INFO("User cache path: {}", root_paths.get_cache_path_string());
 
     // Check admin privs before init starts to avoid creating of file as other user by accident
     bool adminPriv = false;
@@ -139,11 +187,11 @@ int main(int argc, char *argv[]) {
                 fs::remove_all(fs::path(cfg.pref_path) / "ux0/app" / *cfg.delete_title_id);
                 fs::remove_all(fs::path(cfg.pref_path) / "ux0/addcont" / *cfg.delete_title_id);
                 fs::remove_all(fs::path(cfg.pref_path) / "ux0/user/00/savedata" / *cfg.delete_title_id);
-                fs::remove_all(fs::path(root_paths.get_base_path()) / "cache/shaders" / *cfg.delete_title_id);
+                fs::remove_all(fs::path(root_paths.get_cache_path()) / "cache/shaders" / *cfg.delete_title_id);
             }
             if (cfg.pkg_path.has_value() && cfg.pkg_zrif.has_value()) {
                 LOG_INFO("Installing pkg from {} ", *cfg.pkg_path);
-                emuenv.pref_path = string_utils::utf_to_wide(cfg.pref_path);
+                emuenv.set_pref_path(string_utils::utf_to_wide(cfg.pref_path));
                 install_pkg(*cfg.pkg_path, emuenv, *cfg.pkg_zrif, [](float) {});
                 return Success;
             }
@@ -210,7 +258,7 @@ int main(int argc, char *argv[]) {
                 } else
                     return QuitRequested;
             }
-            config::serialize_config(emuenv.cfg, emuenv.base_path);
+            config::serialize_config(emuenv.cfg, emuenv.get_wide_pref_path());
             run_execv(argv, emuenv);
         }
         gui::init(gui, emuenv);
@@ -369,7 +417,6 @@ int main(int argc, char *argv[]) {
     gui.vita_area.information_bar = false;
 
     // Pre-Compile Shaders
-    emuenv.renderer->base_path = emuenv.base_path.c_str();
     emuenv.renderer->title_id = emuenv.io.title_id.c_str();
     emuenv.renderer->self_name = emuenv.self_name.c_str();
     if (renderer::get_shaders_cache_hashs(*emuenv.renderer) && cfg.shader_cache) {

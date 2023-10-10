@@ -841,7 +841,7 @@ void draw_home_screen(GuiState &gui, EmuEnvState &emuenv) {
                 }
 
                 // Draw the custom config button
-                const auto IS_CUSTOM_CONFIG = fs::exists(fs::path(emuenv.base_path) / "config" / fmt::format("config_{}.xml", app.path));
+                const auto IS_CUSTOM_CONFIG = fs::exists(fs::path(emuenv.get_wide_pref_path()) / "config" / fmt::format("config_{}.xml", app.path));
                 if (IS_CUSTOM_CONFIG) {
                     if (emuenv.cfg.apps_list_grid)
                         ImGui::SetCursorPosX(GRID_ICON_POS);

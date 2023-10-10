@@ -55,7 +55,7 @@ VKTextureCache::VKTextureCache(VKState &state)
     : state(state) {}
 
 void sync_texture(VKContext &context, MemState &mem, std::size_t index, SceGxmTexture texture, const Config &config,
-    const std::string &base_path, const std::string &title_id) {
+    const std::string &cache_path, const std::string &title_id) {
     // why are we doing this here?
     // well textures are synced right before the draw
     // in particular, we know that the scissor is the correct one for the upcoming draw

@@ -169,7 +169,7 @@ static void init_font(GuiState &gui, EmuEnvState &emuenv) {
     static const ImWchar large_font_chars[] = { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L':', L'A', L'M', L'P', 0 };
 
     // Set Fw font paths
-    const auto fw_font_path{ fs::path(emuenv.pref_path) / "sa0/data/font/pvf" };
+    const auto fw_font_path{ fs::path(emuenv.get_wide_pref_path()) / "sa0/data/font/pvf" };
     const auto latin_fw_font_path{ fw_font_path / "ltn0.pvf" };
 
     // clang-format off
@@ -245,7 +245,7 @@ static void init_font(GuiState &gui, EmuEnvState &emuenv) {
         font_config.SizePixels = 22.f;
 
         // Set up default font path
-        const auto default_font_path{ fs::path(emuenv.base_path) / "data/fonts/mplus-1mn-bold.ttf" };
+        const auto default_font_path{ fs::path(emuenv.shared_path) / "data/fonts/mplus-1mn-bold.ttf" };
         // Check existence of default font file
         if (fs::exists(default_font_path)) {
             gui.vita_font = io.Fonts->AddFontFromFileTTF(default_font_path.string().c_str(), font_config.SizePixels, &font_config, latin_range);
@@ -272,8 +272,8 @@ static void init_font(GuiState &gui, EmuEnvState &emuenv) {
 vfs::FileBuffer init_default_icon(GuiState &gui, EmuEnvState &emuenv) {
     vfs::FileBuffer buffer;
 
-    const auto default_fw_icon{ fs::path(emuenv.pref_path) / "vs0/data/internal/livearea/default/sce_sys/icon0.png" };
-    const auto default_icon{ fs::path(emuenv.base_path) / "data/image/icon.png" };
+    const auto default_fw_icon{ fs::path(emuenv.get_wide_pref_path()) / "vs0/data/internal/livearea/default/sce_sys/icon0.png" };
+    const auto default_icon{ fs::path(emuenv.shared_path) / "data/image/icon.png" };
 
     if (fs::exists(default_fw_icon) || fs::exists(default_icon)) {
         auto icon_path = fs::exists(default_fw_icon) ? default_fw_icon.string() : default_icon.string();
@@ -293,7 +293,7 @@ static IconData load_app_icon(GuiState &gui, EmuEnvState &emuenv, const std::str
 
     const auto APP_INDEX = get_app_index(gui, app_path);
 
-    if (!vfs::read_app_file(buffer, emuenv.pref_path, app_path, "sce_sys/icon0.png")) {
+    if (!vfs::read_app_file(buffer, emuenv.get_wide_pref_path(), app_path, "sce_sys/icon0.png")) {
         buffer = init_default_icon(gui, emuenv);
         if (buffer.empty()) {
             LOG_WARN("Default icon not found for title {}, [{}] in path {}.",
@@ -384,9 +384,9 @@ void init_app_background(GuiState &gui, EmuEnvState &emuenv, const std::string &
 
     const auto is_sys = app_path.find("NPXS") != std::string::npos;
     if (is_sys)
-        vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.pref_path, "app/" + app_path + "/sce_sys/pic0.png");
+        vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.get_wide_pref_path(), "app/" + app_path + "/sce_sys/pic0.png");
     else
-        vfs::read_app_file(buffer, emuenv.pref_path, app_path, "sce_sys/pic0.png");
+        vfs::read_app_file(buffer, emuenv.get_wide_pref_path(), app_path, "sce_sys/pic0.png");
 
     if (buffer.empty()) {
         LOG_WARN("Background not found for application {} [{}].", APP_INDEX->title, app_path);
@@ -411,7 +411,7 @@ std::string get_sys_lang_name(uint32_t lang_id) {
 }
 
 static bool get_user_apps(GuiState &gui, EmuEnvState &emuenv) {
-    const auto apps_cache_path{ fs::path(emuenv.pref_path) / "ux0/temp/apps.dat" };
+    const auto apps_cache_path{ fs::path(emuenv.get_wide_pref_path()) / "ux0/temp/apps.dat" };
     fs::ifstream apps_cache(apps_cache_path, std::ios::in | std::ios::binary);
     if (apps_cache.is_open()) {
         gui.app_selector.user_apps.clear();
@@ -471,7 +471,7 @@ static bool get_user_apps(GuiState &gui, EmuEnvState &emuenv) {
 }
 
 void save_apps_cache(GuiState &gui, EmuEnvState &emuenv) {
-    const auto temp_path{ fs::path(emuenv.pref_path) / "ux0/temp" };
+    const auto temp_path{ fs::path(emuenv.get_wide_pref_path()) / "ux0/temp" };
     if (!fs::exists(temp_path))
         fs::create_directory(temp_path);
 
@@ -521,7 +521,7 @@ void init_home(GuiState &gui, EmuEnvState &emuenv) {
 
     init_app_background(gui, emuenv, "NPXS10015");
 
-    regmgr::init_regmgr(emuenv.regmgr, emuenv.pref_path);
+    regmgr::init_regmgr(emuenv.regmgr, emuenv.get_wide_pref_path());
 
     const auto is_cmd = emuenv.cfg.run_app_path || emuenv.cfg.content_path;
     if (!gui.users.empty() && gui.users.contains(emuenv.cfg.user_id) && (is_cmd || emuenv.cfg.auto_user_login)) {
@@ -572,7 +572,7 @@ std::vector<App>::iterator get_app_index(GuiState &gui, const std::string &app_p
 void get_app_param(GuiState &gui, EmuEnvState &emuenv, const std::string &app_path) {
     emuenv.app_path = app_path;
     vfs::FileBuffer param;
-    if (vfs::read_app_file(param, emuenv.pref_path, app_path, "sce_sys/param.sfo")) {
+    if (vfs::read_app_file(param, emuenv.get_wide_pref_path(), app_path, "sce_sys/param.sfo")) {
         sfo::get_param_info(emuenv.app_info, param, emuenv.cfg.sys_lang);
     } else {
         emuenv.app_info.app_addcont = emuenv.app_info.app_savedata = emuenv.app_info.app_short_title = emuenv.app_info.app_title = emuenv.app_info.app_title_id = emuenv.app_path; // Use app path as TitleID, addcont, Savedata, Short title and Title
@@ -582,7 +582,7 @@ void get_app_param(GuiState &gui, EmuEnvState &emuenv, const std::string &app_pa
 }
 
 void get_user_apps_title(GuiState &gui, EmuEnvState &emuenv) {
-    const fs::path app_path{ fs::path{ emuenv.pref_path } / "ux0/app" };
+    const fs::path app_path{ fs::path{ emuenv.get_wide_pref_path() } / "ux0/app" };
     if (!fs::exists(app_path))
         return;
 
@@ -603,7 +603,7 @@ void get_sys_apps_title(GuiState &gui, EmuEnvState &emuenv) {
     const std::array<std::string, 4> sys_apps_list = { "NPXS10003", "NPXS10008", "NPXS10015", "NPXS10026" };
     for (const auto &app : sys_apps_list) {
         vfs::FileBuffer params;
-        if (vfs::read_file(VitaIoDevice::vs0, params, emuenv.pref_path, "app/" + app + "/sce_sys/param.sfo")) {
+        if (vfs::read_file(VitaIoDevice::vs0, params, emuenv.get_wide_pref_path(), "app/" + app + "/sce_sys/param.sfo")) {
             SfoFile sfo_handle;
             sfo::load(sfo_handle, params);
             sfo::get_data_by_key(emuenv.app_info.app_version, sfo_handle, "APP_VER");
@@ -690,7 +690,9 @@ ImTextureID load_image(GuiState &gui, const char *data, const std::uint32_t size
 }
 
 void pre_init(GuiState &gui, EmuEnvState &emuenv) {
-    ImGui::CreateContext();
+    if (ImGui::GetCurrentContext() == NULL) {
+        ImGui::CreateContext();
+    }
     gui.imgui_state.reset(ImGui_ImplSdl_Init(emuenv.renderer.get(), emuenv.window.get(), emuenv.base_path));
 
     assert(gui.imgui_state);

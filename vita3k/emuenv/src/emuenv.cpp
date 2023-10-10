@@ -37,6 +37,7 @@
 #include <regmgr/state.h>
 #include <renderer/state.h>
 #include <touch/state.h>
+#include <util/string_utils.h>
 
 #include <gdbstub/state.h>
 
@@ -89,3 +90,27 @@ EmuEnvState::EmuEnvState()
 
 // this is necessary to forward declare unique_ptrs (so that they can call the appropriate destructor)
 EmuEnvState::~EmuEnvState() = default;
+
+std::string EmuEnvState::get_pref_path() {
+    if (this->imgui_ini_path.rfind('\\') > 0) {
+        return this->imgui_ini_path.substr(0, this->imgui_ini_path.rfind('\\'));
+    } else if (this->imgui_ini_path.rfind('/') > 0) {
+        return this->imgui_ini_path.substr(0, this->imgui_ini_path.rfind('/'));
+    }
+    return this->imgui_ini_path;
+}
+
+void EmuEnvState::set_pref_path(std::wstring path) {
+    if (path.length() > 0 && (path.back() != L'/' || path.back() != L'\\')) {
+        path += '/';
+    }
+    this->wpref_path = path;
+
+    if (ImGui::GetCurrentContext() == NULL) {
+        ImGui::CreateContext();
+    }
+    ImGuiIO &io = ImGui::GetIO();
+    io.IniFilename = NULL;
+    this->imgui_ini_path = string_utils::wide_to_utf(path) + "imgui.ini";
+    io.IniFilename = this->imgui_ini_path.c_str();
+}

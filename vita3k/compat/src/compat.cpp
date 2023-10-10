@@ -43,7 +43,7 @@ static std::string db_updated_at;
 static const uint32_t db_version = 1;
 
 bool load_compat_app_db(GuiState &gui, EmuEnvState &emuenv) {
-    const auto app_compat_db_path = fs::path(emuenv.base_path) / "cache/app_compat_db.xml";
+    const auto app_compat_db_path = fs::path(emuenv.cache_path) / "cache/app_compat_db.xml";
     if (!fs::exists(app_compat_db_path)) {
         LOG_WARN("Compatibility database not found at {}.", app_compat_db_path.string());
         return false;
@@ -123,7 +123,7 @@ static const std::string latest_link = "https://api.github.com/repos/Vita3K/comp
 static const std::string app_compat_db_link = "https://github.com/Vita3K/compatibility/releases/download/compat_db/app_compat_db.xml";
 
 bool update_compat_app_db(GuiState &gui, EmuEnvState &emuenv) {
-    const auto cache_path = fs::path(emuenv.base_path) / "cache";
+    const auto cache_path = fs::path(emuenv.cache_path) / "cache";
     const auto app_compat_db_path = cache_path / "app_compat_db.xml";
     gui.info_message.function = SPDLOG_FUNCTION;
 
